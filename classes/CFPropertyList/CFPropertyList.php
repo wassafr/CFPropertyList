@@ -55,6 +55,11 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
   const FORMAT_XML = 2;
 
   /**
+   * Format constant for xml STRING format
+   * @var integer
+   */
+  const FORMAT_XML_STRING = 3;
+  /**
    * Format constant for automatic format recognizing
    * @var integer
    */
@@ -196,7 +201,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
     $format = $format !== null ? $format : $this->format;
     $this->value = array();
 
-    if(!is_readable($file)) throw IOException::notReadable($file);
+    if(!is_readable($file) && $format!=CFPropertyList::FORMAT_XML_STRING) throw IOException::notReadable($file);
 
     switch($format) {
       case CFPropertyList::FORMAT_BINARY:
@@ -221,6 +226,11 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
       case CFPropertyList::FORMAT_XML:
         $doc = new DOMDocument();
         if(!$doc->load($file)) throw new DOMException();
+        $this->import($doc->documentElement, $this);
+        break;
+      case CFPropertyList::FORMAT_XML_STRING:
+        $doc = new DOMDocument();
+        if(!$doc->loadXML($file)) throw new DOMException();
         $this->import($doc->documentElement, $this);
         break;
     }
@@ -263,6 +273,7 @@ class CFPropertyList extends CFBinaryPropertyList implements Iterator {
         $this->detectedFormat = CFPropertyList::FORMAT_XML;
         // else: xml format, break not neccessary
       case CFPropertyList::FORMAT_XML:
+      case CFPropertyList::FORMAT_XML_STRING:
         $doc = new DOMDocument();
         if(!$doc->loadXML($str)) throw new DOMException();
         $this->import($doc->documentElement, $this);
